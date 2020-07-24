@@ -10,7 +10,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.setupUi(self)
 
                
-        self.listWidget.clicked.connect(self.clicked)
+        self.listWidget.currentItemChanged.connect(self.clicked)
         global dic
         dic, files = self.read_json('displaced.json')
         
@@ -51,9 +51,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
             self.gridLayout_2.addWidget(i_label, c//3, c%3, 1, 1)
             c+=1
-
-
-        print(key, sample)
     
     def read_json(self,path):
         with open(path) as f:
