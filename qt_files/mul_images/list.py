@@ -2,32 +2,49 @@ from list_ui import *
 import json
 import random
 import cv2
+import json
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     
+    dic={}
+    files=[]
+    is_useful = {}
+    
+
     def __init__(self, *args, **kwargs):
+        
         QtWidgets.QMainWindow.__init__(self, *args, **kwargs)
         self.setupUi(self)
 
                
-        self.listWidget.currentItemChanged.connect(self.clicked)
-        global dic
-        dic, files = self.read_json('displaced.json')
+        #self.listWidget.currentItemChanged.connect(self.clicked)
         
+        self.dic, self.files = self.read_json('displaced.json')
+        # self.list_files()
+        self.init_useful_dic()
+        self.model = QtGui.QStandardItemModel(self.listView)
+        self.listView.setModel(self.model)
+        self.list_files()
+        self.model.itemChanged.connect(self.on_item_changed)
+        self.selModel = self.listView.selectionModel()
+        self.selModel.currentChanged.connect(self.clicked)
+        self.saveButton.clicked.connect(self.save_list)
+        
+        
+    def on_item_changed(self,item):
+        current_key = item.index().data()
+        self.is_useful[current_key] = bool(item.checkState())
+        # self.is_useful[key] = item.checkState()
 
-        #lists all the files listed inside the dictionary
-        c=0
-        for f in files:
-            self.listWidget.insertItem(c, f)
-            c+=1
+    def clicked(self, current, previous):
         
-    
-    def clicked(self, qmodelindex):
-        item = self.listWidget.currentItem()
-        key = item.text()
+        item = current.data()
+        key = item
+        self.show_sample(key)
                 
+    def show_sample(self,key):
         self.clearLayout(self.gridLayout_2)
-        sample = random.sample(dic[key], 9)
+        sample = random.sample(self.dic[key], 9)
         labels=[]
         c=0
 
@@ -58,11 +75,42 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             list_folders = list(folders.keys())
             list_folders.sort() 
         return  folders, list_folders
+    
+    # def list_files(self):
+    #     #lists all the files listed inside the dictionary
+    #     c=0
+    #     for f in self.files:
+    #         self.listView.insertItem(c, f)
+    #         c+=1
 
+    #lists all the files listed inside the dictionary
+    def list_files(self):
+        for f in self.files:
+            # Create an item with a caption
+            item = QtGui.QStandardItem(f)
+        
+            # Add a checkbox to it
+            item.setCheckable(True)
+        
+            # Add the item to the model
+            self.model.appendRow(item)
     
     def clearLayout(self,layout):
         for i in reversed(range(layout.count())): 
             layout.itemAt(i).widget().setParent(None)
+
+    def init_useful_dic(self):
+        self.is_useful = {}
+        for key in self.dic.keys():
+            self.is_useful[key] = False
+    
+    def save_list(self):
+        with open('is_useful.json', 'w') as f:
+            json.dump(self.is_useful, f)
+        msg = QtWidgets.QMessageBox()
+        msg.setText("Lista guardada correctamente")
+        msg.setIcon(QtWidgets.QMessageBox.Information)
+        msg.exec_()
     
 if __name__ == "__main__":
     app = QtWidgets.QApplication([])
