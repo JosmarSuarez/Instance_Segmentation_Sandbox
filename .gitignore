@@ -7,11 +7,8 @@
 /detectron2_notebooks/detectron2_wandb/wandb
 /detectron2_notebooks/detectron2_wandb/output
 /annotation_tools/deeplab_model
-<<<<<<< HEAD
 /annotation_tools/background_substraction/deeplab_model
 /annotation_tools/background_substraction/models
 /annotation_tools/background_substraction/Models
 /annotation_tools/background_substraction/__pycache__
 /annotation_tools/background_substraction/TB_Summary
-=======
->>>>>>> ff48d0a100af866c86377eda2e3c390f5257538d
