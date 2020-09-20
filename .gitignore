@@ -4,3 +4,11 @@
 /implicit_diff.ipynb
 /discordbot
 /annotation_tools/data
+/detectron2_notebooks/detectron2_wandb/wandb
+/detectron2_notebooks/detectron2_wandb/output
+/annotation_tools/deeplab_model
+/annotation_tools/background_substraction/deeplab_model
+/annotation_tools/background_substraction/models
+/annotation_tools/background_substraction/Models
+/annotation_tools/background_substraction/__pycache__
+/annotation_tools/background_substraction/TB_Summary
