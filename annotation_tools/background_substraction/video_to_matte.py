@@ -240,8 +240,11 @@ def deeplab_segmentation(input_folder, include_empty=True, total_frames = -1, ba
 
         name=list_im[i].replace('img','masksDL')
         out_mask = (255*mask_sel).astype(np.uint8)
+        #opening
+        kernel = np.ones((5,5),np.uint8)
+        out_mask_open = cv2.morphologyEx(out_mask, cv2.MORPH_OPEN, kernel)
         
-        if(cv2.countNonZero(out_mask)>15 or include_empty):
+        if(cv2.countNonZero(out_mask_open)>15 or include_empty):
             cv2.imwrite(name, out_mask)
             count+=1
             count_empty=0 #reset back_img_counter
