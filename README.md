@@ -39,6 +39,8 @@ optional arguments:
 ```
 ### /01_annotation_tools/background_substraction/opencv_operations.ipynb
 This is a jupyter notebook that creates a video or folder applying morpholical operations to videos
+### /01_annotation_tools/mul_folder_to_single_folder.ipynb
+This notebook takes all the images inside a folder and subfolders and stores them into a single folder
 ### /01_annotation_tools/bit_to_polyV3.ipynb
 This jupyter notebook creates annotation files in COCO format (Representing the segmentations as polygons) using a folder containing mask annotations as input
 ### /01_annotation_tools/bit_to_RLE.ipynb
@@ -47,6 +49,7 @@ This jupyter notebook creates annotation files in COCO format (Representing the 
 Converts rectangular images into square images using the bounding boxes from the coco annotations to capture the instance
 ### /01_annotation_tools/image_resize.ipynb
 Resizes a folder that contains images
+
 ## References
 <a id="1">[1]</a> 
 S. Sengupta, V. Jayaram, B. Curless. (2020). 
