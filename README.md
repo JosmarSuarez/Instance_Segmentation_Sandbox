@@ -1,7 +1,7 @@
 # Instance_Segmentation_Sandbox
 It's a repository to test my instance segmentation codes in more devices
-## Useful Tools (annotation_tools)
-### video_to_matte_final.py
+## Useful Tools (01_annotation_tools)
+### /01_annotation_tools/background_substraction/video_to_matte.py
 This tools allows the user to perform background matting to their videos and returns the semantic segmentation, matte and green screen in mp4 format using the technique presented in [[1]](#1) which code is available at https://github.com/senguptaumd/Background-Matting.
 
 
@@ -35,7 +35,21 @@ optional arguments:
   -r RESULTS_FOLDER, --results_folder RESULTS_FOLDER
                         Folder where the results will be written (required)
   -e, --include_empty   Includes empty background images in the final result
+  ### video_to_matte.py
 ```
+### /01_annotation_tools/background_substraction/opencv_operations.ipynb
+This is a jupyter notebook that creates a video or folder applying morpholical operations to videos
+### /01_annotation_tools/mul_folder_to_single_folder.ipynb
+This notebook takes all the images inside a folder and subfolders and stores them into a single folder
+### /01_annotation_tools/bit_to_polyV3.ipynb
+This jupyter notebook creates annotation files in COCO format (Representing the segmentations as polygons) using a folder containing mask annotations as input
+### /01_annotation_tools/bit_to_RLE.ipynb
+This jupyter notebook creates annotation files in COCO format (Representing the segmentations as Run Length encoding) using a folder containing mask annotations as input
+### /01_annotation_tools/image_cropper.ipynb
+Converts rectangular images into square images using the bounding boxes from the coco annotations to capture the instance
+### /01_annotation_tools/image_resize.ipynb
+Resizes a folder that contains images
+
 ## References
 <a id="1">[1]</a> 
 S. Sengupta, V. Jayaram, B. Curless. (2020). 
