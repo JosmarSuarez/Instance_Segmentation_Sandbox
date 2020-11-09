@@ -30,6 +30,6 @@
 /01_annotation_tools/background_substraction/Resultados
 /02_detectron2_notebooks/E1_balloon_training/output
 /01_annotation_tools/data
-/02_detectron2_notebooks/P2_centermask_training/output
-/02_detectron2_notebooks/P2_centermask_training/extracted_classes
-/02_detectron2_notebooks/P2_centermask_training/results
+/02_detectron2_notebooks/P2_centermask_baloons/output
+/02_detectron2_notebooks/P2_centermask_baloons/extracted_classes
+/02_detectron2_notebooks/P2_centermask_baloons/results
