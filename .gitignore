@@ -35,3 +35,4 @@
 /02_detectron2_notebooks/P2_centermask_baloons/results
 /02_detectron2_notebooks/P3_centermask_silhouettes/output
 /01_annotation_tools/test_data
+/02_detectron2_notebooks/P4_centermask_sil_val/output
