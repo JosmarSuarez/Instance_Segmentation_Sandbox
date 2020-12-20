@@ -6,39 +6,28 @@ import cv2
 import time
 
 
-class Thread(QThread):
-    changePixmap = pyqtSignal(QImage)
 
-    def __init__(self, parent=None ):
-        QtCore.QThread.__init__(self, parent)
-
-    def run(self):
-        cap = cv2.VideoCapture(0)
-        # Check if camera opened successfully 
-        if (cap.isOpened()== False):  
-            print("Error opening video  file") 
-        
-        # Read until video is completed 
-        while(cap.isOpened()): 
-            ret, frame = cap.read()
-            if ret:
-                # https://stackoverflow.com/a/55468544/6622587
-                rgbImage = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                h, w, ch = rgbImage.shape
-                bytesPerLine = ch * w
-                convertToQtFormat = QImage(rgbImage.data, w, h, bytesPerLine, QImage.Format_RGB888)
-                p = convertToQtFormat.scaled(640, 480, Qt.KeepAspectRatio)
-                self.changePixmap.emit(p)
-            # Break the loop 
-            else:  
-                break
 
 class TaskThread(QThread):
     # notifyProgress = pyqtSignal(int)
-    changePixmap = pyqtSignal(QImage)
+    changePixmap = pyqtSignal(QImage, QImage)
     def __init__(self, video_source, parent=None):
         QThread.__init__(self, parent)
         self.video_source = video_source
+    
+    def set_res(self, cap, x,y):
+        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
+        cap.set(cv2.CAP_PROP_FPS, 30)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, int(x))
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, int(y))
+    
+    def convert_to_qt(self, rgbImage):
+        h, w, ch = rgbImage.shape
+        bytesPerLine = ch * w
+        convertToQtFormat = QImage(rgbImage.data, w, h, bytesPerLine, QImage.Format_RGB888)
+        p = convertToQtFormat.scaled(800, 800, Qt.KeepAspectRatio)
+        return p
+
     def run(self):
         #use self.myvar in your run 
         # for i in range(self.myvar):
@@ -46,6 +35,8 @@ class TaskThread(QThread):
         #     time.sleep(0.1)
         self.running = True
         cap = cv2.VideoCapture(self.video_source)
+        self.set_res(cap, 1280, 720)
+
         # Check if camera opened successfully 
         if (cap.isOpened()== False):  
             print("Error opening video  file") 
@@ -55,12 +46,14 @@ class TaskThread(QThread):
             ret, frame = cap.read()
             if ret:
                 # https://stackoverflow.com/a/55468544/6622587
+                # rgbImage = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 rgbImage = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                h, w, ch = rgbImage.shape
-                bytesPerLine = ch * w
-                convertToQtFormat = QImage(rgbImage.data, w, h, bytesPerLine, QImage.Format_RGB888)
-                p = convertToQtFormat.scaled(640, 480, Qt.KeepAspectRatio)
-                self.changePixmap.emit(p)
+                rotatedImage = cv2.flip(rgbImage, 1)
+
+                qt_original = self.convert_to_qt(rgbImage)
+                qt_rotated = self.convert_to_qt(rotatedImage)
+                self.changePixmap.emit(qt_original, qt_rotated)
+
             # Break the loop 
             else:  
                 break
@@ -77,22 +70,32 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         
         self.startButton.clicked.connect(self.start_video)
         self.stopButton.clicked.connect(self.stop_video)
-
+        self.stopButton.setEnabled(False)
+    
 
     def start_video(self):
-        self.video_thread = TaskThread(video_source="/home/josmar/Vídeos/krita_correction_ucb.mp4")
+        self.video_thread = TaskThread(video_source=1)
         self.video_thread.changePixmap.connect(self.setImage)
         self.video_thread.start()
+        self.startButton.setEnabled(False)
+        self.stopButton.setEnabled(True)
 
     def stop_video(self):
         self.video_thread.running = False
-        time.sleep(1)
         self.label_video.clear()
         self.label_mask.clear()
-    @pyqtSlot(QImage)
-    def setImage(self, image):
-        self.label_video.setPixmap(QPixmap.fromImage(image))
-        self.label_mask.setPixmap(QPixmap.fromImage(image))
+        self.startButton.setEnabled(True)
+        self.stopButton.setEnabled(False)
+    
+        """
+        setImage(self, image1, image2)
+        
+        Receives two QImages via pyqtSignal and shows them in the screen  
+        """
+    @pyqtSlot(QImage, QImage)
+    def setImage(self, image1, image2):
+        self.label_video.setPixmap(QPixmap.fromImage(image1))
+        self.label_mask.setPixmap(QPixmap.fromImage(image2))
 
 
         
