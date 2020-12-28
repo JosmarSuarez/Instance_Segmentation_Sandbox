@@ -177,7 +177,7 @@ def prep_display(dets_out, img, h, w, undo_transform=True, class_color=False, ma
 
     # Quick and dirty lambda for selecting the color for a particular index
     # Also keeps track of a per-gpu color cache for maximum speed
-    def get_color(j, on_gpu=None):
+    def get_color(j, on_gpu=None, only_white = False):
         global color_cache
         color_idx = (classes[j] * 5 if class_color else j * 5) % len(COLORS)
         
@@ -188,6 +188,8 @@ def prep_display(dets_out, img, h, w, undo_transform=True, class_color=False, ma
             if not undo_transform:
                 # The image might come in as RGB or BRG, depending
                 color = (color[2], color[1], color[0])
+            if only_white:
+                color = (255, 255, 255)
             if on_gpu is not None:
                 color = torch.Tensor(color).to(on_gpu).float() / 255.
                 color_cache[on_gpu][color_idx] = color
@@ -200,8 +202,14 @@ def prep_display(dets_out, img, h, w, undo_transform=True, class_color=False, ma
         # After this, mask is of size [num_dets, h, w, 1]
         masks = masks[:num_dets_to_consider, :, :, None]
         
-        # Prepare the RGB images for each mask given their color (size [num_dets, h, w, 1])
-        colors = torch.cat([get_color(j, on_gpu=img_gpu.device.index).view(1, 1, 1, 3) for j in range(num_dets_to_consider)], dim=0)
+        
+        if args.only_mask:
+            colors = torch.cat([get_color(j, on_gpu=img_gpu.device.index, only_white=True).view(1, 1, 1, 3) for j in range(num_dets_to_consider)], dim=0)
+            mask_alpha = 1
+        else:
+            # Prepare the RGB images for each mask given their color (size [num_dets, h, w, 1])
+            colors = torch.cat([get_color(j, on_gpu=img_gpu.device.index).view(1, 1, 1, 3) for j in range(num_dets_to_consider)], dim=0)
+
         masks_color = masks.repeat(1, 1, 1, 3) * colors * mask_alpha
 
         # This is 1 everywhere except for 1-mask_alpha where the mask is
@@ -649,6 +657,8 @@ def evalimages(net:Yolact, input_folder:str, output_folder:str):
         os.mkdir(output_folder)
 
     print()
+    size = len(os.listdir(input_folder))
+    counter = 0
     for p in Path(input_folder).glob('*'): 
         path = str(p)
         name = os.path.basename(path)
@@ -656,8 +666,11 @@ def evalimages(net:Yolact, input_folder:str, output_folder:str):
         out_path = os.path.join(output_folder, name)
 
         evalimage(net, path, out_path)
-        print(path + ' -> ' + out_path)
-    print('Done.')
+        # print(path + ' -> ' + out_path)
+        counter+=1
+        sys.stdout.write('\r'+  "Done: {}/{}".format(counter,size))
+        sys.stdout.flush()
+    print('\nDone.')
 
 from multiprocessing.pool import ThreadPool
 from queue import Queue

@@ -111,9 +111,32 @@
          <widget class="QComboBox" name="weightsBox"/>
         </item>
         <item>
-         <widget class="QRadioButton" name="mask_radioButton">
+         <widget class="QCheckBox" name="mask_checkBox">
           <property name="text">
-           <string>Solo máscaras</string>
+           <string>Mostrar imagen original</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="bbox_checkBox">
+          <property name="text">
+           <string>Mostrar bboxes</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="class_checkBox">
+          <property name="text">
+           <string>Mostrar etiqueta</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
           </property>
          </widget>
         </item>

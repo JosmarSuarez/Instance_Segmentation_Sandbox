@@ -5,15 +5,16 @@ from PyQt5.QtGui import QImage, QPixmap
 import cv2
 import time
 import os
-from yolact_files.segm_threads import YolactThread, YolactArgs
+from centermask2_files.centermask_threads import CentermaskThread, CentermaskArgs
 import re
+# sys.path.append('/home/josmar/proyectos/centermask2')
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self, *args, **kwargs):
         QtWidgets.QMainWindow.__init__(self, *args, **kwargs)
         self.setupUi(self)
 
-        self.yol_args = YolactArgs()
+        self.centermask_args = CentermaskArgs()
 
         MainWindow.setWindowTitle(self,"Model Visualizer")
         
@@ -24,33 +25,42 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.saveButton.clicked.connect(self.save_file)
         
         
-        self.weights_path = "/home/josmar/proyectos/codes/03_model_visualizer/pyqt_window/yolact_files/weights"
+        self.weights_path = "/home/josmar/proyectos/codes/03_model_visualizer/pyqt_window/centermask2_files/weights"
+        self.models_path = "/home/josmar/proyectos/codes/03_model_visualizer/pyqt_window/centermask2_files/configs/centermask"
 
-        # self.fill_comboBox(self.weightsBox, self.weights_path)
+        self.fill_comboBox(self.weightsBox, self.weights_path)
+        self.fill_comboBox(self.modelBox, self.models_path)
         
-        self.fill_modelBox(self.modelBox, self.weights_path)
+        # self.fill_modelBox(self.modelBox, self.weights_path)
         
-        self.set_model()
-        self.set_weights()
-        self.weightsBox.currentIndexChanged.connect(self.set_weights)
-        self.modelBox.currentIndexChanged.connect(self.set_model)
+
     
 
     def start_video(self):
         
         # self.set_model()
-        actual_model = self.modelBox.currentText()
-        self.yol_args.config = actual_model
-        
-        self.set_weights()
-        self.yol_args.only_mask = not self.mask_checkBox.isChecked()
-        self.yol_args.display_bboxes = self.bbox_checkBox.isChecked()
-        self.yol_args.display_text = self.class_checkBox.isChecked()
-        self.yol_args.display_scores = self.class_checkBox.isChecked()
+               
         
         
+        self.centermask_args = CentermaskArgs()
 
-        self.video_thread = YolactThread(args = self.yol_args)
+        self.centermask_args.config_file = os.path.join(self.models_path, self.modelBox.currentText())
+        
+        weight = os.path.join(self.weights_path, self.weightsBox.currentText())
+        if weight.find("run") == -1:
+            self.centermask_args.opts = ["MODEL.WEIGHTS", weight]
+        else:
+            self.centermask_args.opts = ["MODEL.WEIGHTS", weight,
+            "MODEL.FCOS.NUM_CLASSES", "1"]
+
+        self.centermask_args.show_image = self.mask_checkBox.isChecked()
+        self.centermask_args.show_boxes = self.bbox_checkBox.isChecked()
+        self.centermask_args.show_labels = self.class_checkBox.isChecked()
+        self.centermask_args.set_alpha = 1
+
+
+
+        self.video_thread = CentermaskThread(args = self.centermask_args)
         self.video_thread.changePixmap.connect(self.setImage)
         self.video_thread.changeFPS.connect(self.showFPS)
         self.video_thread.start()
@@ -65,11 +75,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def stop_video(self):
         self.video_thread.running = False
+        self.video_thread.quit()
+
+
         self.label_video.setHidden(True)
         self.label_mask.setHidden(True)
         self.startButton.setEnabled(True)
         self.stopButton.setEnabled(False)
-        self.yol_args = YolactArgs()
+        self.centermask_args = CentermaskArgs()
         self.label_fps.setHidden(True)
         """
         setImage(self, image1, image2)
@@ -88,25 +101,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def save_file(self):
         _dir = QFileDialog.getSaveFileName(self, 'Save File')
         self.label_save.setText(_dir[0])
-    
-    def set_weights(self):
-        weight = self.weightsBox.currentText()
-        path = os.path.join(self.weights_path, weight)
-        # print(self.yol_args.trained_model)
-        if os.path.exists(path):
-            self.yol_args.trained_model = path
-        # print("After: ")
-        # print(self.yol_args.trained_model)
 
-    def set_model(self):
-        actual_model = self.modelBox.currentText()
-        self.fill_weightBox(self.weightsBox, self.weights_path, actual_model)
-        # self.yol_args.config = actual_model
 
     
     def fill_comboBox(self, box, path):
-        if os.path.isdir:
+        if os.path.isdir(path):
             item_list = os.listdir(path)
+        item_list.sort()
         box.clear()
         box.addItems(item_list)
     

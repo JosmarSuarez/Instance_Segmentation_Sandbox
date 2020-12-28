@@ -37,4 +37,9 @@
 /01_annotation_tools/test_data
 /02_detectron2_notebooks/P4_centermask_sil_val/output
 /03_model_visualizer/notebooks/data
-/03_model_visualizer/pyqt_window/weights
+/03_model_visualizer/pyqt_window/yolact_files/weights
+/03_model_visualizer/pyqt_window/centermask2_files/weights
+/03_model_visualizer/pyqt_window/centermask2_files/configs
+/04_casia_tests/input
+/04_casia_tests/output
+/04_casia_tests/silhouettes
