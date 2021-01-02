@@ -3,7 +3,7 @@ import timeit
 
 class Args:
   # trained_model = '/home/josmar/proyectos/codes/03_model_visualizer/pyqt_window/weights/yolact_pp_101_rc_ucb_gait_4_17000.pth'
-  trained_model = '/home/josmar/proyectos/codes/03_model_visualizer/pyqt_window/weights/yolact_pp_101_rc_ucb_gait_19_67000.pth'
+  trained_model = '/home/josmar/proyectos/codes/03_model_visualizer/pyqt_window/yolact_files/weights/yolact_pp_101_ordered_rc_ucb_gait_25_87000.pth'
   top_k = 1
   cuda = True
   fast_nms = True
@@ -43,8 +43,8 @@ class Args:
   no_hash = False
   only_mask = True
 
-input_folder = "/media/josmar/Nuevo vol/Taller de Grado/new_dataset/Casia_processed_silhouettes/Casia_B1_90_images"
-output_folder = "/media/josmar/Nuevo vol/Taller de Grado/new_dataset/Casia_processed_silhouettes/yolact_pp_101_rc_ucb_gait_19_67000"
+input_folder = "/media/josmar/Nuevo vol/Taller de Grado/new_dataset/Casia_processed_silhouettes/Casia_B_90_images"
+output_folder = "/media/josmar/Nuevo vol/Taller de Grado/new_dataset/Casia_processed_silhouettes/yolact_pp_101_ordered_rc_ucb_gait_25_87000-lr0001"
 
 
 

@@ -115,7 +115,9 @@ class VisualizationDemo(object):
         def process_predictions(frame, predictions):
             if self.args.show_image:
                 frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+                original = frame
             else:
+                original = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
                 frame = np.zeros(frame.shape)
             if "panoptic_seg" in predictions:
                 panoptic_seg, segments_info = predictions["panoptic_seg"]
@@ -132,7 +134,8 @@ class VisualizationDemo(object):
 
             # Converts Matplotlib RGB format to OpenCV BGR format
             vis_frame = cv2.cvtColor(vis_frame.get_image(), cv2.COLOR_RGB2BGR)
-            return frame, vis_frame
+            
+            return original, vis_frame
 
         frame_gen = self._frame_from_video(video)
         if self.parallel:
