@@ -52,27 +52,46 @@ class VisualizationDemo(object):
         """
         vis_output = None
         predictions = self.predictor(image)
-        # Convert image from OpenCV BGR format to Matplotlib RGB format.
-        image = image[:, :, ::-1]
-        visualizer = Visualizer(image, self.metadata, instance_mode=self.instance_mode)
-        if "inst" in predictions:
-            visualizer.vis_inst(predictions["inst"])
-        if "bases" in predictions:
-            self.vis_bases(predictions["bases"])
-        if "panoptic_seg" in predictions:
-            panoptic_seg, segments_info = predictions["panoptic_seg"]
-            vis_output = visualizer.draw_panoptic_seg_predictions(
-                panoptic_seg.to(self.cpu_device), segments_info
-            )
+        if self.args.img_binary:
+            
+            mask= predictions['instances'].get('pred_masks')
+            mask= mask.to('cpu')
+            num, h, w= mask.shape
+            bin_mask= np.zeros((h, w))
+        
+            for m in mask:
+                sil = m.numpy()
+                bin_mask+= sil
+                
+            return bin_mask*255
         else:
-            if "sem_seg" in predictions:
-                vis_output = visualizer.draw_sem_seg(
-                    predictions["sem_seg"].argmax(dim=0).to(self.cpu_device))
-            if "instances" in predictions:
-                instances = predictions["instances"].to(self.cpu_device)
-                vis_output = visualizer.draw_instance_predictions(predictions=instances)
+            # Convert image from OpenCV BGR format to Matplotlib RGB format.
+            image = image[:, :, ::-1]
+            if not self.args.show_image:
+                image = np.zeros(image.shape)
+            # visualizer = Visualizer(image, self.metadata, instance_mode=self.instance_mode)
+            visualizer = Visualizer(image, self.metadata, instance_mode=ColorMode.IMAGE_BW)
+            if "inst" in predictions:
+                visualizer.vis_inst(predictions["inst"])
+            if "bases" in predictions:
+                self.vis_bases(predictions["bases"])
+            if "panoptic_seg" in predictions:
+                panoptic_seg, segments_info = predictions["panoptic_seg"]
+                vis_output = visualizer.draw_panoptic_seg_predictions(
+                    panoptic_seg.to(self.cpu_device), segments_info
+                )
+            else:
+                if "sem_seg" in predictions:
+                    vis_output = visualizer.draw_sem_seg(
+                        predictions["sem_seg"].argmax(dim=0).to(self.cpu_device))
+                if "instances" in predictions:
+                    instances = predictions["instances"].to(self.cpu_device)
+                    # instances.remove("pred_boxes")
+                    # instances.remove("scores")
+                    # instances.remove("pred_classes")
+                    vis_output = visualizer.draw_instance_predictions(predictions=instances)
 
-        return predictions, vis_output
+            return predictions, vis_output
 
     def _frame_from_video(self, video):
         while video.isOpened():

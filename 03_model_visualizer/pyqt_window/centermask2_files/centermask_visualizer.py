@@ -83,7 +83,7 @@ class Centermask_Args:
 if __name__ == "__main__":
     mp.set_start_method("spawn", force=True)
     # args = get_parser().parse_args()
-    args = Centermask_Args
+    args = Centermask_Args()
     logger = setup_logger()
     logger.info("Arguments: " + str(args))
 

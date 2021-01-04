@@ -21,8 +21,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.stopButton.clicked.connect(self.stop_video)
         self.stopButton.setEnabled(False)
 
+        self.openButton.clicked.connect(self.open_file)
         self.saveButton.clicked.connect(self.save_file)
-        
         
         self.weights_path = "/home/josmar/proyectos/codes/03_model_visualizer/pyqt_window/yolact_files/weights"
 
@@ -34,7 +34,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.set_weights()
         self.weightsBox.currentIndexChanged.connect(self.set_weights)
         self.modelBox.currentIndexChanged.connect(self.set_model)
-    
+
+        self.sizes = [[1920,1080], [1280,1024], [1280, 960], [1280,800], [1280,720], [1024, 768], [1024,576], [1024, 576],[960, 720], [864, 480],[800, 600],[800, 448], [640, 480], [640, 360], [432, 240], [352, 288], [320, 240], [176, 144], [160,120]]
+        self.fill_resBox(self.resBox, self.sizes)
 
     def start_video(self):
         
@@ -48,7 +50,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.yol_args.display_text = self.class_checkBox.isChecked()
         self.yol_args.display_scores = self.class_checkBox.isChecked()
         
+        self.yol_args.size = self.resBox.currentText()
         
+        if self.rb_webcam.isChecked():
+            self.yol_args.video = str(self.webcam_id.value())
+        if self.rb_file.isChecked():
+            self.yol_args.video = self.line_in.text()
 
         self.video_thread = YolactThread(args = self.yol_args)
         self.video_thread.changePixmap.connect(self.setImage)
@@ -70,7 +77,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.startButton.setEnabled(True)
         self.stopButton.setEnabled(False)
         self.yol_args = YolactArgs()
-        self.label_fps.setHidden(True)
+        self.label_fps.setText("")
         """
         setImage(self, image1, image2)
         
@@ -87,7 +94,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     
     def save_file(self):
         _dir = QFileDialog.getSaveFileName(self, 'Save File')
-        self.label_save.setText(_dir[0])
+        self.line_out.setText(_dir[0])
+
+    def open_file(self):
+        _dir = QFileDialog.getOpenFileName(self, 'Open File')
+        self.line_in.setText(_dir[0])
     
     def set_weights(self):
         weight = self.weightsBox.currentText()
@@ -128,7 +139,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             results = [x.start() for x in re.finditer('\_', item)]
             _cfg = item[:results[-2]] + "_config"
             cfg_list.append(_cfg)
+        box.clear()
         box.addItems(set(cfg_list))
+    
+    def fill_resBox(self, box, sizes):
+        box.clear()
+        str_size = [(str(size[0]) + "x" + str(size[1])) for size in sizes]
+        box.addItems(str_size)
     # def actualizar(self):
     #     self.label.setText("¡Acabas de hacer clic en el botón!")
 

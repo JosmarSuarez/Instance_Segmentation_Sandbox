@@ -35,6 +35,8 @@ class CentermaskArgs:
     show_boxes=True
     show_labels=True
     set_alpha=1
+    img_binary = True
+    size = None
 
 
 
@@ -102,8 +104,9 @@ class CentermaskThread(QThread):
         self.running=True
 
         if args.input:
-            if os.path.isdir(args.input[0]):
-                args.input = [os.path.join(args.input[0], fname) for fname in os.listdir(args.input[0])]
+            if os.path.isdir(args.input):
+                args.input = [os.path.join(args.input, fname) for fname in os.listdir(args.input)]
+                print (args.input)
             elif len(args.input) == 1:
                 args.input = glob.glob(os.path.expanduser(args.input[0]))
                 assert args.input, "The input path(s) was not found"
@@ -111,28 +114,39 @@ class CentermaskThread(QThread):
                 # use PIL, to be consistent with evaluation
                 img = read_image(path, format="BGR")
                 start_time = time.time()
-                predictions, visualized_output = demo.run_on_image(img)
-                logger.info(
-                    "{}: detected {} instances in {:.2f}s".format(
-                        path, len(predictions["instances"]), time.time() - start_time
-                    )
-                )
 
-                if args.output:
-                    if os.path.isdir(args.output):
-                        assert os.path.isdir(args.output), args.output
-                        out_filename = os.path.join(args.output, os.path.basename(path))
-                    else:
-                        assert len(args.input) == 1, "Please specify a directory with args.output"
-                        out_filename = args.output
-                    visualized_output.save(out_filename)
+                if args.img_binary:
+                    out_img = demo.run_on_image(img)
+                    img_name = os.path.basename(path).split(".")[0] + ".png"
+                    out_filename = os.path.join(args.output, img_name)
+                    cv2.imwrite(out_filename, out_img)
+
                 else:
-                    cv2.imshow(WINDOW_NAME, visualized_output.get_image()[:, :, ::-1])
-                    if cv2.waitKey(0) == 27:
-                        break  # esc to quit
+                    predictions, visualized_output = demo.run_on_image(img)
+                    logger.info(
+                        "{}: detected {} instances in {:.2f}s".format(
+                            path, len(predictions["instances"]), time.time() - start_time
+                        )
+                    )
+
+                    if args.output:
+                        if os.path.isdir(args.output):
+                            assert os.path.isdir(args.output), args.output
+                            out_filename = os.path.join(args.output, os.path.basename(path))
+                        else:
+                            assert len(args.input) == 1, "Please specify a directory with args.output"
+                            out_filename = args.output
+                        visualized_output.save(out_filename)
+                    else:
+                        cv2.imshow(WINDOW_NAME, visualized_output.get_image()[:, :, ::-1])
+                        if cv2.waitKey(0) == 27:
+                            break  # esc to quit
         elif args.webcam is not None:
             assert args.input is None, "Cannot have both --input and --webcam!"
             cam = cv2.VideoCapture(args.webcam)
+            v_w, v_h = self.args.size.split("x")  
+            self.set_res(cam, v_w, v_h)
+
             for frame, vis in tqdm.tqdm(demo.run_on_video(cam)):
                 # cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
                 # cv2.imshow(WINDOW_NAME, vis)
@@ -186,6 +200,8 @@ class CentermaskThread(QThread):
                     self.changePixmap.emit(qt_original, qt_masked)
                     if cv2.waitKey(1) == 27:
                         break  # esc to quit
+                if not self.running:
+                    break  # esc to quit
             video.release()
             if args.output:
                 output_file.release()

@@ -43,3 +43,5 @@
 /04_casia_tests/input
 /04_casia_tests/output
 /04_casia_tests/silhouettes
+/03_model_visualizer/pyqt_window/test
+/04_casia_tests/minute_cut

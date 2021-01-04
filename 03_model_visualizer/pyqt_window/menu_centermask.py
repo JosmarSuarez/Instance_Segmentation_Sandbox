@@ -23,6 +23,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.stopButton.setEnabled(False)
 
         self.saveButton.clicked.connect(self.save_file)
+        self.openButton.clicked.connect(self.open_file)
         
         
         self.weights_path = "/home/josmar/proyectos/codes/03_model_visualizer/pyqt_window/centermask2_files/weights"
@@ -30,6 +31,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.fill_comboBox(self.weightsBox, self.weights_path)
         self.fill_comboBox(self.modelBox, self.models_path)
+
+        self.sizes = [[1920,1080], [1280,1024], [1280, 960], [1280,800], [1280,720], [1024, 768], [1024,576], [1024, 576],[960, 720], [864, 480],[800, 600],[800, 448], [640, 480], [640, 360], [432, 240], [352, 288], [320, 240], [176, 144], [160,120]]
+        self.fill_resBox(self.resBox, self.sizes)
+
         
         # self.fill_modelBox(self.modelBox, self.weights_path)
         
@@ -37,12 +42,44 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     
 
     def start_video(self):
+
+        self.centermask_args = CentermaskArgs()
+        
+        if self.rb_webcam.isChecked():
+            self.centermask_args.webcam =  self.webcam_id.value() # 'Take inputs from webcam.'
+            self.centermask_args.video_input = None #'Path to video file.'
+            self.centermask_args.input =   None
+            self.centermask_args.output =   None
+        
+        if self.rb_file.isChecked():
+            in_path = self.line_in.text()
+            out_path = self.line_out.text()
+
+            if len(out_path) > 0:
+                self.centermask_args.output =   out_path
+            else:
+                self.centermask_args.output =   None
+
+            if os.path.isdir(in_path):   
+                self.centermask_args.webcam =  None # 'Take inputs from webcam.'
+                self.centermask_args.video_input = None #'Path to video file.'
+                self.centermask_args.input =   in_path
+
+                print(in_path)
+
+            else:
+                self.centermask_args.webcam =  None # 'Take inputs from webcam.'
+                self.centermask_args.video_input = in_path #'Path to video file.'
+                self.centermask_args.output = None
+                
+
+
         
         # self.set_model()
                
         
         
-        self.centermask_args = CentermaskArgs()
+        
 
         self.centermask_args.config_file = os.path.join(self.models_path, self.modelBox.currentText())
         
@@ -57,6 +94,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.centermask_args.show_boxes = self.bbox_checkBox.isChecked()
         self.centermask_args.show_labels = self.class_checkBox.isChecked()
         self.centermask_args.set_alpha = 1
+
+        self.centermask_args.size = self.resBox.currentText()
 
 
 
@@ -98,11 +137,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def showFPS(self, actual_fps):
         self.label_fps.setText(actual_fps)
     
+    def open_file(self):
+        _dir = QFileDialog.getOpenFileName(self, 'Open File')
+        self.line_in.setText(_dir[0])
+    
     def save_file(self):
         _dir = QFileDialog.getSaveFileName(self, 'Save File')
-        self.label_save.setText(_dir[0])
-
-
+        self.line_out.setText(_dir[0])
     
     def fill_comboBox(self, box, path):
         if os.path.isdir(path):
@@ -130,6 +171,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             _cfg = item[:results[-2]] + "_config"
             cfg_list.append(_cfg)
         box.addItems(set(cfg_list))
+    
+    def fill_resBox(self, box, sizes):
+        box.clear()
+        str_size = [(str(size[0]) + "x" + str(size[1])) for size in sizes]
+        box.addItems(str_size)
     # def actualizar(self):
     #     self.label.setText("¡Acabas de hacer clic en el botón!")
 

@@ -64,6 +64,7 @@ class YolactArgs:
   emulate_playback = False
   no_hash = False
   only_mask = False
+  size = None
 
 class CustomDataParallel(torch.nn.DataParallel):
     """ A Custom Data Parallel class that properly gathers lists of dictionaries. """
@@ -81,16 +82,20 @@ class YolactThread(QThread):
     
     def set_res(self, cap, x,y):
         cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
-        cap.set(cv2.CAP_PROP_FPS, 30)
+        # cap.set(cv2.CAP_PROP_FPS, 30)
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, int(x))
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, int(y))
-        cap.set(cv2.CAP_PROP_AUTOFOCUS, 1) 
+        # cap.set(cv2.CAP_PROP_AUTOFOCUS, 1) 
     
     def convert_to_qt(self, rgbImage):
         h, w, ch = rgbImage.shape
         bytesPerLine = ch * w
         convertToQtFormat = QImage(rgbImage.data, w, h, bytesPerLine, QImage.Format_RGB888)
-        p = convertToQtFormat.scaled(640, 480, Qt.KeepAspectRatio)
+        w_limit = 960
+        if w < w_limit:
+            p = convertToQtFormat.scaled(w, h, Qt.KeepAspectRatio)
+        else:
+            p = convertToQtFormat.scaled(w_limit, 480, Qt.KeepAspectRatio)
         return p
 
     def run(self):
@@ -315,6 +320,9 @@ class YolactThread(QThread):
         
         if is_webcam:
             vid = cv2.VideoCapture(int(path))
+            v_w, v_h = self.args.size.split("x")  
+            self.set_res(vid, v_w, v_h)
+            
         else:
             vid = cv2.VideoCapture(path)
         
@@ -482,6 +490,8 @@ class YolactThread(QThread):
         print()
         if out_path is None: print('Press Escape to close.')
         try:
+            # f_counter = 0
+            # sum_fps = 0
             while vid.isOpened() and self.running:
                 # Hard limit on frames in buffer so we don't run out of memory >.>
                 while frame_buffer.qsize() > 100:
@@ -535,7 +545,15 @@ class YolactThread(QThread):
                     fps = self.args.video_multiframe / frame_times.get_avg()
                 else:
                     fps = 0
-                
+
+                #delete to aviod crashes
+                # if f_counter >100:
+                #     sum_fps = avg
+                #     f_counter = 1
+                # sum_fps +=fps
+                # f_counter +=1
+                # avg = sum_fps/f_counter
+
                 fps_str = 'Processing FPS: %.2f\nVideo Playback FPS: %.2f\nFrames in Buffer: %d' % (fps, video_fps, frame_buffer.qsize())
                 if not self.args.display_fps:
                     # print('\r' + fps_str + '    ', end='')
