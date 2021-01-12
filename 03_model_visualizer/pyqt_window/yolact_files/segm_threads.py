@@ -57,7 +57,7 @@ class YolactArgs:
   # video = "/media/josmar/Nuevo vol/Taller de Grado/new_dataset/UCB walking/VID_20201031_162353.mp4"
   video = "1"
   video_multiframe = 1
-  score_threshold = 0.15
+  score_threshold = 0.13
   dataset = None
   detect = False
   display_fps = False

@@ -7,6 +7,7 @@ from collections import deque
 import cv2
 import torch
 import matplotlib.pyplot as plt
+import time
 
 from detectron2.data import MetadataCatalog
 from detectron2.engine.defaults import DefaultPredictor
@@ -168,16 +169,31 @@ class VisualizationDemo(object):
 
                 if cnt >= buffer_size:
                     frame = frame_data.popleft()
+                    start = time.perf_counter()
                     predictions = self.predictor.get()
-                    yield process_predictions(frame, predictions)
+                    end = time.perf_counter()
+                    fps = round(1/(end-start), 2)
+                    p_frame, p_vis = process_predictions(frame, predictions)
+                    # fps = round(15.555,2)
+                    yield p_frame, p_vis, fps
 
             while len(frame_data):
                 frame = frame_data.popleft()
+                start = time.perf_counter()
                 predictions = self.predictor.get()
-                yield process_predictions(frame, predictions)
+                end = time.perf_counter()
+                fps = round(1/(end-start), 2)
+                p_frame, p_vis = process_predictions(frame, predictions)
+                # fps = round(15.555,2)
+                yield p_frame, p_vis, fps
         else:
             for frame in frame_gen:
-                yield process_predictions(frame, self.predictor(frame))
+                start = time.perf_counter()
+                p_frame, p_vis = process_predictions(frame, self.predictor(frame))
+                end = time.perf_counter()
+                fps = round(1/(end-start), 2)
+                # fps = round(15.555,2)
+                yield p_frame, p_vis, fps
 
 
 class AsyncPredictor:

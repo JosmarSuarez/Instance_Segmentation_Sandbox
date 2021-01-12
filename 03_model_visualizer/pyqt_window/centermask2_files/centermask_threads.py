@@ -147,7 +147,8 @@ class CentermaskThread(QThread):
             v_w, v_h = self.args.size.split("x")  
             self.set_res(cam, v_w, v_h)
 
-            for frame, vis in tqdm.tqdm(demo.run_on_video(cam)):
+            # for frame, vis in tqdm.tqdm(demo.run_on_video(cam)):
+            for frame, vis, fps in demo.run_on_video(cam):
                 # cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
                 # cv2.imshow(WINDOW_NAME, vis)
                 
@@ -155,6 +156,8 @@ class CentermaskThread(QThread):
                 qt_masked = self.convert_to_qt(rgbOut)
                 qt_original = self.convert_to_qt(frame)
                 self.changePixmap.emit(qt_original, qt_masked)
+                text_fps = "FPS: {}".format(fps)
+                self.changeFPS.emit(text_fps)
 
                 if not self.running:
                     break  # esc to quit
