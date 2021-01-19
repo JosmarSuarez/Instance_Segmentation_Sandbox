@@ -45,3 +45,5 @@
 /04_casia_tests/silhouettes
 /03_model_visualizer/pyqt_window/test
 /04_casia_tests/minute_cut
+/02_detectron2_notebooks/P4_centermask_sil_val/new_runs
+/02_detectron2_notebooks/P4_centermask_sil_val/wandb

@@ -93,7 +93,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.centermask_args.show_image = self.mask_checkBox.isChecked()
         self.centermask_args.show_boxes = self.bbox_checkBox.isChecked()
         self.centermask_args.show_labels = self.class_checkBox.isChecked()
-        self.centermask_args.set_alpha = 1
+        self.centermask_args.set_alpha = 0.7
 
         self.centermask_args.size = self.resBox.currentText()
 

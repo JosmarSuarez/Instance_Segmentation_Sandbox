@@ -27,14 +27,14 @@ class CentermaskArgs:
     video_input = None #"/media/josmar/Nuevo vol/Dataset Casia/DatasetB-1/video/001-bg-01-000.avi" #'Path to video file.'
     input =   None #'A list of space separated input images'
     output =  None#'A file or directory to save output visualizations. '
-    confidence_threshold = 0.4
+    confidence_threshold = 0.4#0.4
     opts = ["MODEL.WEIGHTS","/home/josmar/proyectos/codes/02_detectron2_notebooks/P4_centermask_sil_val/output/run11_centermask2_2nd_method/model_final.pth",
     "MODEL.FCOS.NUM_CLASSES", "1"]
 
     show_image = True
     show_boxes=True
     show_labels=True
-    set_alpha=1
+    set_alpha=0.7
     img_binary = True
     size = None
 
