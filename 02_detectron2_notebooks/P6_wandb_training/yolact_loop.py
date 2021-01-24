@@ -2,11 +2,12 @@ import sys
 sys.path.append('/home/josmar/proyectos/yolact')
 
 from data import *
-from utils.augmentations import SSDAugmentation, BaseTransform
+from utils.augmentations import SSDAugmentation, BaseTransform, FastBaseTransform, Resize
 from utils.functions import MovingAverage, SavePath
 from utils.logger import Log
 from utils import timer
 from layers.modules import MultiBoxLoss
+from layers.output_utils import postprocess, undo_image_transformation #To vuisualize
 from yolact import Yolact
 import os
 import sys
@@ -27,6 +28,7 @@ import wandb
 
 # Oof
 import eval as eval_script
+import matplotlib.pyplot as plt
 
 # def str2bool(v):
 #     return v.lower() in ("yes", "true", "t", "1")
@@ -124,6 +126,7 @@ class Args:
         self.only_last_layer = config.only_last_layer
         self.compute_val_loss = False
         self.max_iter = config.max_iter
+        self.trained_model = "latest"
 
 
 
@@ -584,6 +587,154 @@ def setup_eval():
     eval_script.parse_args(args_list)
 
 
+
+
+### Image visualizer
+
+def predict_images (my_args, n_imgs):
+    global args
+    args = my_args
+    if args.config is not None:
+        set_cfg(args.config)
+
+    if args.trained_model == 'interrupt':
+        args.trained_model = SavePath.get_interrupt('weights/')
+    elif args.trained_model == 'latest':
+        args.trained_model = SavePath.get_latest('weights/', cfg.name)
+
+    if args.config is None:
+        model_path = SavePath.from_str(args.trained_model)
+        # TODO: Bad practice? Probably want to do a name lookup instead.
+        args.config = model_path.model_name + '_config'
+        print('Config not specified. Parsed %s from the file name.\n' % args.config)
+        set_cfg(args.config)
+
+    # if args.detect:
+    #     cfg.eval_mask_branch = False
+
+    # if args.dataset is not None:
+    #     set_dataset(args.dataset)
+
+    with torch.no_grad():
+        # if not os.path.exists('results'):
+        #     os.makedirs('results')
+
+        cudnn.fastest = True
+        torch.set_default_tensor_type('torch.cuda.FloatTensor')
+        
+        
+        print('Loading model...', end='')
+        net = Yolact()
+        net.load_weights(args.trained_model)
+        net.eval()
+        print(' Done.')
+        
+        net = net.cuda()
+
+        return evaluate(net, n_imgs)
+
+def evaluate(net:Yolact, train_mode=False, n_imgs = 3):
+    net.detect.use_fast_nms = True
+    net.detect.use_cross_class_nms = False
+    cfg.mask_proto_debug = False
+    
+    top_k = 15
+    th = 0.4
+    mask_alpha = 1
+
+    test_imgs = os.listdir(cfg.dataset.test_images)
+    
+    class_labels = {
+        1: "person 1",
+        2: "person 2",
+        3: "person 3"
+        }
+
+    wandb_imgs = []
+    for img_path in random.sample(test_imgs, n_imgs):
+        img_path = os.path.join(cfg.dataset.test_images, img_path)
+        print(img_path)
+
+        # Find predictions for the selected path
+        preds = evalimage(net=net, path = img_path)
+        
+        # Load the image and change it to RGB
+        im = cv2.imread(img_path)
+        rgb_im = im[:, :, ::-1]
+
+        # Getting image size
+        h,w,_ = rgb_im.shape
+        
+        #Process predictions
+        save = cfg.rescore_bbox
+        cfg.rescore_bbox = True
+        t = postprocess(preds, w, h, visualize_lincomb = False,
+                                            crop_masks        = True,
+                                            score_threshold   = th)
+        cfg.rescore_bbox = save
+
+        idx = t[1].argsort(0, descending=True)[:15]
+        #Getting masks,classes scores and boxes from the prediction
+        masks = t[3][idx]
+        classes, scores, boxes = [x[idx].cpu().numpy() for x in t[:3]]
+        
+        # Formatting results into wandb
+        bin_mask= np.zeros((h, w))
+        box_data = []
+        
+        class2name = {0:"person"}
+        for j in range(classes.shape[0]):
+            if scores[j] > th:
+                # masks
+                sil = masks[j].byte().cpu().numpy()
+                av_mask = bin_mask == 0 # Gets the pixels that are not used 
+                corrected_sil = np.bitwise_and(av_mask, sil) #Gets the silhouette cropping the overlapped parts
+                bin_mask+= corrected_sil * (j+1)
+
+                # scores 
+                acc = scores[j]
+                acc = round(float(acc), 2)
+
+                #boxes
+                x_min, y_min, x_max, y_max = boxes[j]
+                x_min, x_max = round(x_min/w, 2), round(x_max/w, 2)
+                y_min, y_max = round(y_min/h, 2), round(y_max/h, 2)
+                bbox_dict = {"position": {
+                                "minX": x_min,
+                                "maxX": x_max,
+                                "minY": y_min,
+                                "maxY": y_max},
+                            "class_id" : j+1,
+                            "box_caption": "person:{}".format(acc),
+                            "scores" : {
+                                "acc": acc},
+                            }
+                box_data.append(bbox_dict)
+
+                #class_labels
+                # class_str = class2name[classes[j]]+ " " + str(j+1)
+                # class_labels[j+1] = class_str
+        wandb_img = wandb.Image(rgb_im, 
+        masks={"prediction" : {"mask_data" : bin_mask, "class_labels" : class_labels}},
+        boxes={"prediction" : {"box_data" : box_data, "class_labels" : class_labels}})
+        wandb_imgs.append(wandb_img)
+        # plt.imshow(bin_mask)
+        # plt.show()
+        # plt.imshow(rgb_im)
+        # plt.show()
+        # print(box_data)
+    return wandb_imgs
+        
+
+def evalimage(net:Yolact, path:str):
+    input_img = cv2.imread(path)
+    frame = torch.from_numpy(input_img).cuda().float()
+    batch = FastBaseTransform()(frame.unsqueeze(0))
+    preds = net(batch)
+
+    return preds
+
+
 my_config = {
     "batch_size" : 5,
     "resume" : "yolact_data/weights/yolact_plus_base_54_800000.pth",
@@ -630,5 +781,9 @@ if __name__ == '__main__':
     config.framework = "pytorch"
     
     # config.out_dir = "./new_runs/{}".format(wandb.run.name)
+    
     train()
+    
+    predicted_images = predict_images(args, n_imgs=3)
+    wandb.log({"predictions" : predicted_images})
     wandb.run.finish()
