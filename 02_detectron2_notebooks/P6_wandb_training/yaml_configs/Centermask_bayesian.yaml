@@ -1,0 +1,41 @@
+program: centermask_run.py
+project: instance_segmentation_train
+method: bayes
+metric:
+    goal: maximize
+    name: segm.AP
+parameters:
+    train_dataset:
+        value: "ucb_gait_train"
+    test_dataset:
+        value: "ucb_gait_test"
+    val_dataset:
+        value: "ucb_gait_val"
+    weights:
+        value: "/home/josmar/proyectos/centermask2/weights/centermask2-lite-V-39-eSE-FPN-ms-4x.pth"
+    test_th:
+        value: 0.4
+    classes:
+        value: 1
+    max_it:
+        value: 4000
+    eval_it:
+        value: 500
+    model:
+        value: "/home/josmar/proyectos/centermask2/configs/centermask/centermask_lite_V_39_eSE_FPN_ms_4x.yaml"
+    freeze_at:
+        max: 5
+        min: 1
+        distribution: int_uniform
+    lr_exp: 
+        max: -3
+        min: -5
+        distribution: uniform
+    momentum_exp:
+        max: -1
+        min: -3
+        distribution: uniform
+    decay_exp: 
+        max: -3
+        min: -5
+        distribution: uniform

@@ -46,7 +46,10 @@
 /03_model_visualizer/pyqt_window/test
 /04_casia_tests/minute_cut
 /02_detectron2_notebooks/P6_wandb_training/new_runs
+/02_detectron2_notebooks/P6_wandb_training/yolact_runs
 /02_detectron2_notebooks/P6_wandb_training/wandb
 /02_detectron2_notebooks/P6_wandb_training/weights
-/02_detectron2_notebooks/P6_wandb_training/yolact_data/train_weights
-/02_detectron2_notebooks/P6_wandb_training/yolact_data/weights
+/02_detectron2_notebooks/P6_wandb_training/yolact_data
+/01_annotation_tools/background_substraction/input_video
+/01_annotation_tools/background_substraction/pruebas
+/wandb

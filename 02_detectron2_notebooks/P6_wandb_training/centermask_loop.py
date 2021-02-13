@@ -378,27 +378,42 @@ metric = {
 
 parameters_dict = {
     'lr_exp': {
+        # "distribution": "normal",
+        # "mu": -3.7,
+        # "sigma": 0.2},
         # a flat distribution between 0 and 0.1
         'distribution': 'uniform',
-        'min': -4,
-        'max': -3},
-    'momentum_exp': {
-        # a flat distribution between 0 and 0.1
-        'distribution': 'uniform',
-        'min': -2,
-        'max': -1},
+        'min': -4,#-4
+        'max': -3.7},#-3
+    
+    # 'lr_exp': {'value': 0.0002},
+    
+    # 'momentum_exp': {
+    #     # a flat distribution between 0 and 0.1
+    #     'distribution': 'uniform',
+    #     'min': -3,#-2
+    #     'max': -2},#-1
+
+    'momentum_exp': {'value': 0.95},
+    
+
     'decay_exp': {
         # a flat distribution between 0 and 0.1
         'distribution': 'uniform',
         'min': -5,
         'max': -3},
-    'freeze_at': {
+    # 'freeze_at': {
+    #     'value': 2},
         # a flat distribution between 0 and 0.1
-        'distribution': 'q_uniform',
-        'min': 1,
-        'max': 5,
-        'q': 1},    
-    "max_it" :{"value": 1000}, #2500
+        # 'distribution': 'q_uniform',
+        # 'min': 1,
+        # 'max': 5,
+        # 'q': 1},
+
+    # 'decay_exp': {"value": -5},
+    'freeze_at': {"value": 2},
+
+    "max_it" :{"value": 4000}, #4000
     "eval_it" : {"value": 500}, #500
     "classes" : {"value":1},
     "model" : {"value":"/home/josmar/proyectos/centermask2/configs/centermask/centermask_lite_V_39_eSE_FPN_ms_4x.yaml"},
@@ -428,7 +443,7 @@ def sweep_run(custom_cfg = None):
     new_momentum = 1 - 10**custom_cfg.momentum_exp
     new_decay = 10**custom_cfg.decay_exp
     custom_cfg.update({"lr":new_lr,
-                        "momentum": new_momentum,
+                        "momentum": custom_cfg.momentum_exp,
                         "weight_decay": new_decay})
     # Training
     out_dir = "{}/{}".format(root_dir, wandb.run.name) #root_dir is global
@@ -470,7 +485,7 @@ sweep_id = wandb.sweep(sweep_config, project="instance_segmentation_train")     
 root_dir = os.path.join("./new_runs/sweeps", sweep_id)
 Path(root_dir).mkdir(parents=True, exist_ok=True)
 
-wandb.agent(sweep_id, sweep_run, count=2)
+wandb.agent(sweep_id, sweep_run, count=15)
 
 
 

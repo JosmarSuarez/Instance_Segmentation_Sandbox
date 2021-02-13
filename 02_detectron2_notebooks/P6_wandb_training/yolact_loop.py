@@ -100,22 +100,22 @@ import matplotlib.pyplot as plt
 class Args:
     def __init__(self, config):
         self.batch_size = 5
-        self.resume = "yolact_data/weights/yolact_plus_base_54_800000.pth"
+        self.resume = config.weights
         self.start_iter = 0
         self.num_workers = 4
         self.cuda = True
         self.lr = config.lr
         self.momentum = config.momentum #0.6
-        self.decay = config.decay
+        self.decay = config.weight_decay
         self.gamma = None
         self.save_folder = 'yolact_data/train_weights/'
         self.log_folder = 'yolact_data/logs/'
-        self.config = "yolact_pp_101_ordered_rc_ucb_gait_config"
-        self.save_interval = 1000 #10000
-        self.validation_size = 1000 #5000
-        self.validation_iter = 1000 #10000
-        self.keep_latest = False
-        self.keep_latest_interval = 1000
+        self.config = config.model
+        self.save_interval = config.eval_it #10000
+        self.validation_size = config.eval_it #5000
+        self.validation_iter = config.eval_it #10000
+        self.keep_latest = True
+        self.keep_latest_interval = config.eval_it
         self.dataset = None
         self.log = True
         self.log_gpu = False
@@ -125,8 +125,9 @@ class Args:
         self.eval_only_person = False
         self.only_last_layer = config.only_last_layer
         self.compute_val_loss = False
-        self.max_iter = config.max_iter
+        self.max_iter = config.max_it
         self.trained_model = "latest"
+        self.shuffle = config.shuffle
 
 
 
@@ -227,16 +228,16 @@ def train():
 
     dataset = COCODetection(image_path=cfg.dataset.train_images,
                             info_file=cfg.dataset.train_info,
-                            transform=SSDAugmentation(MEANS))
+                            transform=SSDAugmentation(MEANS)) #SSDAugmentation(MEANS)
     
     if args.validation_iter > 0:
         setup_eval()
         val_dataset = COCODetection(image_path=cfg.dataset.valid_images,
                                     info_file=cfg.dataset.valid_info,
-                                    transform=BaseTransform(MEANS))
+                                    transform=BaseTransform(MEANS)) #BaseTransform(MEANS)
         test_dataset = COCODetection(image_path=cfg.dataset.test_images,
                                     info_file=cfg.dataset.test_info,
-                                    transform=BaseTransform(MEANS))
+                                    transform=BaseTransform(MEANS)) #BaseTransform(MEANS)
 
     # Parallel wraps the underlying module, but when saving and loading we don't want that
     yolact_net = Yolact(only_last_layer=args.only_last_layer)
@@ -303,7 +304,7 @@ def train():
 
     data_loader = data.DataLoader(dataset, args.batch_size,
                                   num_workers=args.num_workers,
-                                  shuffle=True, collate_fn=detection_collate,
+                                  shuffle= args.shuffle, collate_fn=detection_collate,
                                   pin_memory=True)
     
     # data_loader_val = data.DataLoader(val_dataset, args.batch_size,
@@ -598,9 +599,9 @@ def predict_images (my_args, n_imgs):
         set_cfg(args.config)
 
     if args.trained_model == 'interrupt':
-        args.trained_model = SavePath.get_interrupt('weights/')
+        args.trained_model = SavePath.get_interrupt(args.save_folder)
     elif args.trained_model == 'latest':
-        args.trained_model = SavePath.get_latest('weights/', cfg.name)
+        args.trained_model = SavePath.get_latest(args.save_folder, cfg.name)
 
     if args.config is None:
         model_path = SavePath.from_str(args.trained_model)
@@ -764,26 +765,113 @@ my_config = {
     "compute_val_loss" : False,
     "max_iter" : 2000}
 
-loss_types = ['B', 'C', 'M', 'P', 'D', 'E', 'S', 'I']
-if __name__ == '__main__':
-    global args
+import pprint
+import math
+
+#Configurate sweeps
+
+sweep_config = {
+    'method': 'random'
+    }
+
+metric = {
+    'name': 'segm.AP',
+    'goal': 'minimize'   
+    }
+
+parameters_dict = {
+    'lr_exp': {
+        # a flat distribution between 0 and 0.1
+        # 'distribution': 'uniform',
+        # 'min': -5.7,
+        # 'max': -3.7},
+        'value': -5},
+
+    'momentum_exp': {
+        # a flat distribution between 0 and 0.1
+        'distribution': 'uniform',
+        'min': -2,
+        'max': -0.3},
     
+    # 'momentum_exp': {'value': 0.98},
+
+    'decay_exp': {
+        # a flat distribution between 0 and 0.1
+        'distribution': 'uniform',
+        'min': -5,
+        'max': -3},
+    # 'decay_exp': {"value": -4},
+    
+    
+    # 'freeze_at': {
+    #     # a flat distribution between 0 and 0.1
+    #     'distribution': 'q_uniform',
+    #     'min': 1,
+    #     'max': 5,
+    #     'q': 1},
+
+    # "only_last_layer" :{"values": [0,1]},
+    "only_last_layer" :{"value": 0},
+
+    "max_it" :{"value": 2500}, #2500
+    "eval_it" : {"value": 500}, #500
+    "classes" : {"value":1},
+    "model" : {"value":"yolact_pp_101_ordered_rc_ucb_gait_config"},
+    "weights" : {"value":"yolact_data/weights/yolact_plus_base_54_800000.pth"},
+    "test_th" : {"value":0.4},
+    "out_dir" : {"value":"./new_runs/run15"},
+    "shuffle": {"value": 0} 
+    }
+    
+
+sweep_config['metric'] = metric
+sweep_config['parameters'] = parameters_dict
+
+pprint.pprint(sweep_config)
+
+loss_types = ['B', 'C', 'M', 'P', 'D', 'E', 'S', 'I']
+
+
+
+def sweep_run(config = None):
+    global args
     wandb.init(project="instance_segmentation_train")
     config = wandb.config
-    config.update(my_config) # Used for manual parameters
-    args = Args(config)
-    args.lr = config.lr
-    args.momentum = config.momentum
-    args.decay = config.decay
-    set_args()
+    # config.update(my_config) # Used for manual parameters
     
+    new_lr = 10**config.lr_exp
+    new_momentum = 1 - 10**config.momentum_exp
+    new_decay = 10**config.decay_exp
+    config.update({"lr":new_lr,
+                        "momentum": new_momentum,
+                        "weight_decay": new_decay})
+    
+    # Training weights directory
+    out_dir = "{}/{}".format(root_dir, wandb.run.name) #root_dir is global
+    Path(root_dir).mkdir(parents=True, exist_ok=True)
+    
+
+    args = Args(config)
+    args.save_folder = out_dir
+    
+    set_args()
+    print("My args \n")
+    pprint.pprint(vars(args))
     os.environ['WANDB_NOTEBOOK_NAME'] = 'yolact_loop.py'
     config.framework = "pytorch"
-    
     # config.out_dir = "./new_runs/{}".format(wandb.run.name)
-    
     train()
-    
     predicted_images = predict_images(args, n_imgs=3)
     wandb.log({"predictions" : predicted_images})
     wandb.run.finish()
+
+if __name__ == '__main__':
+    # random.seed(0)
+    
+    sweep_id = wandb.sweep(sweep_config, project="instance_segmentation_train")     #sweep id will be global
+    
+    global root_dir
+    root_dir = os.path.join("./yolact_runs/sweeps", sweep_id)
+    Path(root_dir).mkdir(parents=True, exist_ok=True)
+    
+    wandb.agent(sweep_id, sweep_run, count=15)
